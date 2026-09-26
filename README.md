@@ -49,3 +49,33 @@ See:
 Development is staged. Each stage has an issue and explicit acceptance criteria. Do not jump ahead and build A2A, Web3, payments, native apps, or a global KOL score before the MVP gates pass.
 
 Current status: **foundation / architecture bootstrap**.
+
+## Run the S00 foundation locally
+
+Prerequisites: Node.js 24, npm 11, Docker Desktop/Engine running. No cloud account or secret is needed for these checks.
+
+```sh
+git clone https://github.com/Zhangsfish/food_memory_reigns_supreme.git
+cd food_memory_reigns_supreme
+npm ci
+npm run lint
+npm run typecheck
+npm test
+npm run build
+npm run dev
+```
+
+Visit `http://localhost:3000/`, `/api/health`, `/llms.txt`, and `/openapi.json`. The latter parses `contracts/openapi.yaml` at request time; it is not a second hand-maintained contract.
+
+For the local database, start Docker first, then:
+
+```sh
+npm run db:start
+npm run db:reset
+npm run db:check
+npm run db:status
+```
+
+`db:reset` applies all migrations from a clean local database. `npm run db:migrate` applies pending migrations without resetting data. If Docker Hub/Public ECR throttles image downloads, retry after the registry rate limit clears. Local Supabase credentials printed by the CLI are for development only; never commit them.
+
+See `reports/S00/DELIVERY.md` for exact tested versions, results, and limitations.

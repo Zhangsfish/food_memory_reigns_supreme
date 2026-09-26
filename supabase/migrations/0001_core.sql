@@ -258,7 +258,8 @@ as $$
   limit 1
 $$;
 
-revoke all on function public.current_contributor_id() from public;
+-- Supabase defaults may grant EXECUTE directly to anon; revoking PUBLIC alone is insufficient.
+revoke all on function public.current_contributor_id() from public, anon;
 grant execute on function public.current_contributor_id() to authenticated;
 
 -- Public read policies.
