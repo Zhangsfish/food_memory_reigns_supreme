@@ -1,0 +1,31 @@
+# dependencies
+node_modules/
+.pnpm-store/
+
+# Next.js
+.next/
+out/
+
+# test/build output
+coverage/
+playwright-report/
+test-results/
+
+# local Supabase
+.supabase/
+supabase/.temp/
+
+# environment/secrets
+.env
+.env.local
+.env.*.local
+!.env.example
+
+# OS/editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# logs
+*.log
