@@ -28,10 +28,14 @@ jobs:
           node-version: '24'
           cache: npm
       - run: npm ci
-      - name: Start local Supabase database and apply migration
-        run: npx supabase start -x gotrue,realtime,storage-api,imgproxy,kong,mailpit,postgrest,postgres-meta,studio,edge-runtime,logflare,vector,supavisor
+      - name: Start local Supabase database and public REST
+        run: npx supabase start -x realtime,storage-api,imgproxy,mailpit,postgres-meta,studio,edge-runtime,logflare,vector,supavisor
       - run: npx supabase db reset
       - run: npm run db:check
+      - run: npm run test:rest
+      - run: npm run test:db
+      - run: npm run build
+      - run: npm run test:http
       - name: Stop local Supabase
         if: always()
         run: npx supabase stop

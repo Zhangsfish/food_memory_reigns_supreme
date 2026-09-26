@@ -48,7 +48,7 @@ See:
 
 Development is staged. Each stage has an issue and explicit acceptance criteria. Do not jump ahead and build A2A, Web3, payments, native apps, or a global KOL score before the MVP gates pass.
 
-Current status: **foundation / architecture bootstrap**.
+Current status: **S01 public read/search implementation, pending review**. All published records in this stage are deterministic synthetic fixtures, not real user experiences.
 
 ## Run the S00 foundation locally
 
@@ -79,3 +79,30 @@ npm run db:status
 `db:reset` applies all migrations from a clean local database. `npm run db:migrate` applies pending migrations without resetting data. If Docker Hub/Public ECR throttles image downloads, retry after the registry rate limit clears. Local Supabase credentials printed by the CLI are for development only; never commit them.
 
 See `reports/S00/DELIVERY.md` for exact tested versions, results, and limitations.
+
+## Run S01 public read/search locally
+
+Start Docker, then in this repository:
+
+```sh
+npm ci
+npm run db:start
+npm run db:reset
+npm run db:check
+npm run test:db
+npm run test:rest
+npm run lint
+npm run typecheck
+npm test
+npm run build
+npm run test:http
+npm run dev:local
+```
+
+`db:reset` applies migrations and loads `supabase/seed.sql` with 15 published synthetic experiences and one unpublished fixture. `dev:local`, `test:db`, and `test:http` read the local database URL from `supabase status` without writing credentials to a file. Stop the local stack with `npm run db:stop`.
+
+`test:rest` needs the full Supabase local API (`npm run db:start`). It uses the CLI's local anonymous key in memory to verify that published columns are readable while internal columns and private tables are denied.
+
+Try `/search`, `/e/10000000-0000-4000-8000-000000000001`, `/u/demo_alice`, and `/api/v1/search?country=CN&locality=%E7%9F%B3%E5%AE%B6%E5%BA%84&limit=2`. The search API defaults to 10 results, rejects limits above 50, and returns `next_cursor` when more results exist. Pass it back as `cursor` with the same filters. `q` is a literal substring search in S01; it does not interpret taste, ingredients, or sentiment. `cost_basis` distinguishes a bill total from a per-person amount.
+
+For a configured server, set server-only `DATABASE_URL` and `SITE_URL` (the canonical HTTPS origin) in the runtime environment. Never put database credentials in `NEXT_PUBLIC_*` variables. Public database queries switch to the PostgreSQL `anon` role and obey RLS. S01 does not configure a production deployment or a real embedding provider; see `reports/S01/DELIVERY.md` for evidence and limitations.
