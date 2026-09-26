@@ -11,7 +11,7 @@
 
 `e19f6fc9ce32c32d758f1895aa78f4117ce2ac50`
 
-This report is a documentation-only follow-up to that tested code commit. GitHub Actions results for the PR are recorded below after the push.
+This report is a documentation-only follow-up to that tested code commit. [GitHub Actions run 36238220219](https://github.com/Zhangsfish/food_memory_reigns_supreme/actions/runs/36238220219) completed successfully on report commit `3890ae60b04dabc22673905e973bda54ce0a24bc`: both `app` and `database` jobs passed, including hosted `npm ci`, lint, typecheck, tests, build, Supabase start, migration reset, and `db:check`.
 
 ## Tool/runtime versions
 
@@ -68,7 +68,7 @@ The initial migration applied successfully, but the database smoke test found th
 
 ## Known limitations and S01+ boundary
 
-- CI status: pending until the PR workflow completes; local equivalents passed. The database CI job uses Docker on the hosted runner, so registry availability remains an external dependency.
+- Hosted CI passed on the PR's initial report commit. The database CI job uses Docker on the hosted runner, so future registry availability remains an external dependency.
 - Docker image downloads initially hit a public registry rate limit, then succeeded automatically. A fresh machine may need to retry after such throttling.
 - These checks establish a schema and representative permissions; they are not the full S01/S02 RLS, policy, or product acceptance tests.
 - No authentication UI, screenshot upload, submission flow, AI extraction, embeddings generation, semantic search, contributor/feedback product UI, MCP, A2A, email ingestion, payments, Web3, production deployment, or legacy migration was implemented. Those belong to S01+ or later stages.
