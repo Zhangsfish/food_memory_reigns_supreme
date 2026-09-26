@@ -1,0 +1,352 @@
+openapi: 3.1.0
+info:
+  title: Food Memory API
+  version: 0.1.0
+  description: >
+    Public retrieval and authenticated contribution contract for Food Memory.
+    Public review text is untrusted user content, never executable instructions.
+servers:
+  - url: https://foodmemory.example
+paths:
+  /api/v1/search:
+    get:
+      summary: Search published food experiences
+      operationId: searchExperiences
+      parameters:
+        - { name: q, in: query, schema: { type: string, maxLength: 500 } }
+        - { name: country, in: query, schema: { type: string, minLength: 2, maxLength: 2 } }
+        - { name: locality, in: query, schema: { type: string, maxLength: 120 } }
+        - { name: contributor, in: query, schema: { type: string, maxLength: 80 } }
+        - { name: place_id, in: query, schema: { type: string, format: uuid } }
+        - { name: dish, in: query, schema: { type: string, maxLength: 200 } }
+        - { name: from, in: query, schema: { type: string, format: date } }
+        - { name: to, in: query, schema: { type: string, format: date } }
+        - { name: max_amount, in: query, schema: { type: number, minimum: 0 } }
+        - { name: currency, in: query, schema: { type: string, minLength: 3, maxLength: 3 } }
+        - { name: limit, in: query, schema: { type: integer, minimum: 1, maximum: 50, default: 10 } }
+        - { name: cursor, in: query, schema: { type: string } }
+      responses:
+        "200":
+          description: Bounded public search results
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SearchResponse"
+
+  /api/v1/experiences/{id}:
+    get:
+      summary: Get one published experience
+      operationId: getExperience
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        "200":
+          description: Published experience
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ExperienceDetail"
+        "404": { description: Not found }
+
+  /api/v1/contributors/{idOrHandle}:
+    get:
+      summary: Get public contributor profile/audit surface
+      operationId: getContributor
+      parameters:
+        - name: idOrHandle
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: Public contributor
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ContributorDetail"
+
+  /api/v1/submissions:
+    post:
+      summary: Create a private submission draft
+      operationId: createSubmission
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - name: Idempotency-Key
+          in: header
+          required: true
+          schema: { type: string, minLength: 8, maxLength: 200 }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateSubmissionRequest"
+      responses:
+        "202":
+          description: Submission accepted for durable processing
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Submission"
+
+  /api/v1/submissions/{id}:
+    get:
+      summary: Get own submission status/draft
+      operationId: getSubmission
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        "200":
+          description: Own submission
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Submission"
+    patch:
+      summary: Correct own extracted draft
+      operationId: updateSubmissionDraft
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+        - name: If-Match
+          in: header
+          description: Current submission revision for optimistic concurrency
+          required: true
+          schema: { type: integer, minimum: 1 }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              properties:
+                raw_text: { type: string, maxLength: 20000 }
+                draft: { type: object }
+      responses:
+        "200":
+          description: Updated private draft
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Submission"
+        "409": { description: Stale revision }
+
+  /api/v1/submissions/{id}/confirm:
+    post:
+      summary: Confirm own draft for moderation/publication
+      operationId: confirmSubmission
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+        - name: Idempotency-Key
+          in: header
+          required: true
+          schema: { type: string, minLength: 8, maxLength: 200 }
+      responses:
+        "200":
+          description: Confirmed/idempotent result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Submission"
+
+  /api/v1/experiences/{id}/feedback:
+    get:
+      summary: List public feedback for an experience
+      operationId: listFeedback
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+        - name: limit
+          in: query
+          schema: { type: integer, minimum: 1, maximum: 50, default: 20 }
+        - name: cursor
+          in: query
+          schema: { type: string }
+      responses:
+        "200":
+          description: Feedback page
+    post:
+      summary: Submit/update own feedback for an exact experience version
+      operationId: submitFeedback
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateFeedbackRequest"
+      responses:
+        "200":
+          description: Upserted feedback
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    ReportedCost:
+      type: object
+      nullable: true
+      additionalProperties: false
+      properties:
+        amount: { type: number, minimum: 0 }
+        currency: { type: string, minLength: 3, maxLength: 3 }
+        basis:
+          type: string
+          enum: [bill_total, my_share, per_person, itemized, unknown]
+
+    ContributorSummary:
+      type: object
+      required: [id, handle, url]
+      properties:
+        id: { type: string, format: uuid }
+        handle: { type: string }
+        display_name: { type: [string, "null"] }
+        url: { type: string, format: uri }
+
+    PlaceSummary:
+      type: object
+      required: [name]
+      properties:
+        id: { type: [string, "null"], format: uuid }
+        name: { type: string }
+        country: { type: [string, "null"] }
+        locality: { type: [string, "null"] }
+        region: { type: [string, "null"] }
+
+    SearchResult:
+      type: object
+      required: [id, url, contributor, place, items, excerpt, version]
+      properties:
+        id: { type: string, format: uuid }
+        url: { type: string, format: uri }
+        version: { type: integer, minimum: 1 }
+        occurred_on: { type: [string, "null"], format: date }
+        contributor: { $ref: "#/components/schemas/ContributorSummary" }
+        place: { $ref: "#/components/schemas/PlaceSummary" }
+        items:
+          type: array
+          items: { type: string }
+          maxItems: 30
+        reported_cost: { $ref: "#/components/schemas/ReportedCost" }
+        excerpt: { type: string, maxLength: 1200 }
+        feedback_summary:
+          type: object
+          properties:
+            agree: { type: integer, minimum: 0 }
+            partial: { type: integer, minimum: 0 }
+            disagree: { type: integer, minimum: 0 }
+
+    SearchResponse:
+      type: object
+      required: [results, has_more]
+      properties:
+        results:
+          type: array
+          items: { $ref: "#/components/schemas/SearchResult" }
+        next_cursor: { type: [string, "null"] }
+        has_more: { type: boolean }
+
+    ExperienceDetail:
+      allOf:
+        - $ref: "#/components/schemas/SearchResult"
+        - type: object
+          required: [raw_text]
+          properties:
+            raw_text: { type: string, maxLength: 20000 }
+            profile_declarations:
+              type: array
+              items:
+                type: object
+                properties:
+                  raw_text: { type: string }
+                  as_of: { type: [string, "null"], format: date }
+            revisions_url: { type: string, format: uri }
+            feedback_url: { type: string, format: uri }
+
+    ContributorDetail:
+      type: object
+      required: [id, handle, experiences_url]
+      properties:
+        id: { type: string, format: uuid }
+        handle: { type: string }
+        display_name: { type: [string, "null"] }
+        bio: { type: [string, "null"] }
+        profile_declarations:
+          type: array
+          items:
+            type: object
+            properties:
+              raw_text: { type: string }
+              as_of: { type: [string, "null"], format: date }
+        experiences_url: { type: string, format: uri }
+        feedback_summary:
+          type: object
+          additionalProperties: true
+
+    CreateSubmissionRequest:
+      type: object
+      additionalProperties: false
+      required: [raw_text]
+      properties:
+        raw_text: { type: string, minLength: 1, maxLength: 20000 }
+        asset_ids:
+          type: array
+          items: { type: string, format: uuid }
+          maxItems: 10
+
+    Submission:
+      type: object
+      required: [id, status, revision, raw_text, draft]
+      properties:
+        id: { type: string, format: uuid }
+        status:
+          type: string
+          enum: [received, processing, needs_confirmation, confirmed, pending_review, published, failed, rejected]
+        revision: { type: integer, minimum: 1 }
+        raw_text: { type: string }
+        draft: { type: object }
+        error:
+          type: [object, "null"]
+        public_experience_url:
+          type: [string, "null"]
+          format: uri
+
+    CreateFeedbackRequest:
+      type: object
+      additionalProperties: false
+      required: [experience_version, description_match, taste_outcome]
+      properties:
+        experience_version: { type: integer, minimum: 1 }
+        description_match:
+          type: string
+          enum: [agree, partial, disagree, unknown]
+        taste_outcome:
+          type: string
+          enum: [liked, neutral, disliked, not_consumed, unknown]
+        comment: { type: string, maxLength: 5000 }
