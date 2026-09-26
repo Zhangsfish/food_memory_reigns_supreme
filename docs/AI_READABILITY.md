@@ -21,7 +21,7 @@ Publish normal sitemap/robots metadata.
 `GET /api/v1/search`
 
 Supported inputs:
-- `q` — natural-language retrieval text
+- `q` — literal text substring in S01; a real natural-language semantic query requires a later configured embedding provider
 - `country`
 - `locality`
 - `contributor`
@@ -41,6 +41,8 @@ Rules:
 - empty/broad queries still return bounded pages
 - no whole-database response
 - no private data
+
+S01 returns matching original text without inferring taste, diet, ingredients, or per-person cost. A tested pgvector database adapter exists, but public `q` does not invoke it or claim semantic behavior.
 
 ## 3. Compact search result
 

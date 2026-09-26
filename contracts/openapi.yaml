@@ -13,7 +13,7 @@ paths:
       summary: Search published food experiences
       operationId: searchExperiences
       parameters:
-        - { name: q, in: query, schema: { type: string, maxLength: 500 } }
+        - { name: q, in: query, description: "S01 literal text substring search; semantic public queries require a later configured embedder.", schema: { type: string, maxLength: 500 } }
         - { name: country, in: query, schema: { type: string, minLength: 2, maxLength: 2 } }
         - { name: locality, in: query, schema: { type: string, maxLength: 120 } }
         - { name: contributor, in: query, schema: { type: string, maxLength: 80 } }
@@ -23,6 +23,7 @@ paths:
         - { name: to, in: query, schema: { type: string, format: date } }
         - { name: max_amount, in: query, schema: { type: number, minimum: 0 } }
         - { name: currency, in: query, schema: { type: string, minLength: 3, maxLength: 3 } }
+        - { name: cost_basis, in: query, schema: { type: string, enum: [bill_total, my_share, per_person, itemized, unknown] } }
         - { name: limit, in: query, schema: { type: integer, minimum: 1, maximum: 50, default: 10 } }
         - { name: cursor, in: query, schema: { type: string } }
       responses:
@@ -241,11 +242,12 @@ components:
 
     SearchResult:
       type: object
-      required: [id, url, contributor, place, items, excerpt, version]
+      required: [id, url, contributor, place, items, excerpt, version, synthetic]
       properties:
         id: { type: string, format: uuid }
         url: { type: string, format: uri }
         version: { type: integer, minimum: 1 }
+        synthetic: { type: boolean, description: "True for clearly labelled test/seed records." }
         occurred_on: { type: [string, "null"], format: date }
         contributor: { $ref: "#/components/schemas/ContributorSummary" }
         place: { $ref: "#/components/schemas/PlaceSummary" }
