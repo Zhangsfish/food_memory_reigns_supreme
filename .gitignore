@@ -10,10 +10,13 @@ out/
 coverage/
 playwright-report/
 test-results/
+*.tsbuildinfo
 
 # local Supabase
 .supabase/
 supabase/.temp/
+supabase/.branches/
+supabase/.profiles/
 
 # environment/secrets
 .env
