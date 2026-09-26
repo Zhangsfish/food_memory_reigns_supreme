@@ -30,7 +30,7 @@ The following commands were actually run in the repository root after implementa
 | `npm run db:migrate` | PASS; no migrations pending after reset. |
 | `npm audit --audit-level=moderate` | PASS; zero vulnerabilities. |
 
-The GitHub Actions workflow runs the same app checks and a database job with reset, RLS checks, anonymous REST test, database tests, build, and live HTTP test. Hosted CI status: pending the PR run at report creation.
+The GitHub Actions workflow runs the same app checks and a database job with reset, RLS checks, anonymous REST test, database tests, build, and live HTTP test. [Hosted run 36241497728](https://github.com/Zhangsfish/food_memory_reigns_supreme/actions/runs/36241497728) completed successfully on PR commit `893d64ef904876bc1285178bedf8e2d4a880c207`; both `app` and `database` jobs passed.
 
 ## Routes and examples
 
